@@ -1,0 +1,1317 @@
+Модели:
+
+Contract.cs
+
+using System;
+using System.ComponentModel.DataAnnotations;
+
+namespace WholesaleBase.Models
+{
+    public class Contract
+    {
+        public int Id { get; set; }
+
+        [Display(Name = "Дата подписания")]
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:dd.MM.yy}", ApplyFormatInEditMode = true)]
+        public DateTime ConclusionDate { get; set; }
+
+        [Display(Name = "Товар")]
+        public int GoodsId { get; set; }
+        public Goods Goods { get; set; }
+
+        [Display(Name = "Количество")]
+        [Range(1, Int32.MaxValue, ErrorMessage = "Количество должно быть положительным числом")]
+        public int GoodsQuantity { get; set; }
+
+        [Display(Name = "Периодичность в днях")]
+        [Range(1, 365)]
+        public int TurnoverPeriodicity { get; set; }
+
+        [Display(Name = "Начиная с")]
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:dd.MM.yy}", ApplyFormatInEditMode = true)]
+        public DateTime StartDate { get; set; }
+
+        [Display(Name = "Тип оборота")]
+        public int TurnoverTypeId { get; set; }
+        public TurnoverType TurnoverType { get; set; }
+
+        [Display(Name = "Контрагент")]
+        public int ContractorId { get; set; }
+        public TurnoverMember Contractor { get; set; }
+
+        [Display(Name = "Склад")]
+        public int WarehouseId { get; set; }
+        public Warehouse Warehouse { get; set; }
+        public bool Status { get; set; }
+        public bool CheckToday()
+        {
+            TimeSpan difference = DateTime.Now - StartDate;
+            //разница должна быть кратна периодичности
+            if ((difference.Days >= 0) && (difference.Days % TurnoverPeriodicity == 0))
+                return true;
+            return false;            
+        }
+    }
+}
+
+Customer.cs
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+
+namespace WholesaleBase.Models
+{
+    public class Customer:TurnoverMember
+    {
+    }
+}
+
+Goods.cs
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace WholesaleBase.Models
+{
+    public class Goods
+    {
+        public int Id { get; set; }
+
+        [Display(Name = "Название")]
+        [Required]
+        public string Name { get; set; }
+
+        [Display(Name = "Поставщик")]
+        public int SupplierId { get; set; }
+        public Supplier Supplier { get; set; }
+
+        [Display(Name = "Ед.изм.")]
+        public int MeasureUnitId { get; set; }
+        public MeasureUnit MeasureUnit { get; set; }
+
+        [Display(Name = "Цена закупки")]
+        public decimal PurchasePrice { get; set; }
+
+        [Display(Name = "Цена продажи")]
+        public decimal SellingPrice { get; set; }
+        public bool Status { get; set; }
+        public virtual List<GoodsMovement> GoodsMovements { get; set; }
+
+    }
+}
+
+GoodsMovement.cs
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace WholesaleBase.Models
+{
+    public class GoodsMovement
+    {
+        public int Id { get; set; }
+
+        [Display(Name = "Товар")]
+        public int GoodsId { get; set; }
+        public Goods Goods { get; set; }
+
+        [Display(Name = "Склад")]
+        public int WarehouseId { get; set; }
+        public Warehouse Warehouse { get; set; }
+
+        [DataType(DataType.Date)]
+        [Display(Name = "Дата")]
+        [DisplayFormat(DataFormatString = "{0:dd.MM.yy}", ApplyFormatInEditMode = true)]
+        public DateTime Date { get; set; }
+
+        [Display(Name = "Приход")]
+        public int GoodsArrival { get; set; }
+
+        [Display(Name = "Расход")]
+        public int GoodsConsumption { get; set; }
+
+        [Display(Name = "Остаток")]
+        public int GoodsBalance { get; set; }
+        public void AddTurnover(TurnoverType turnoverType, int goodsQuantity)
+        {
+            if (turnoverType.Name == "Приход")
+            {
+                GoodsArrival += goodsQuantity;
+                GoodsBalance += goodsQuantity;
+            }                
+            else if (turnoverType.Name == "Расход")
+            {
+                GoodsConsumption += goodsQuantity;
+                GoodsBalance -= goodsQuantity;
+            }                
+        } 
+    }
+}
+
+InventoryResult.cs
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace WholesaleBase.Models
+{
+    public class InventoryResult
+    {
+        public int Id { get; set; }
+
+        [Display(Name = "Дата инвентаризации")]
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:dd.MM.yy}", ApplyFormatInEditMode = true)]
+        public DateTime InventoryDate { get; set; }
+
+        [Display(Name = "Склад")]
+        public int WarehouseId { get; set; }
+        public Warehouse Warehouse { get; set; }
+
+        [Display(Name = "Товар")]
+        public int GoodsId { get; set; }
+        public Goods Goods { get; set; }
+
+        [Display(Name = "Фактический остаток")]
+        public int ActualGoodsBalance { get; set; }
+
+        [Display(Name = "Учтённый остаток")]
+        public int RegisteredGoodsBalance { get; set; }
+
+        public bool Status { get; set; }
+    }
+}
+
+MeasureUnit.cs
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace WholesaleBase.Models
+{
+    public class MeasureUnit
+    {
+        public int Id { get; set; }
+        
+        public string Name { get; set; }
+    }
+}
+
+Supplier.cs
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+
+namespace WholesaleBase.Models
+{
+    public class Supplier:TurnoverMember
+    {
+    }
+}
+
+TurnoverMember.cs
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace WholesaleBase.Models
+{
+    public class TurnoverMember
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [Display(Name = "Название")]
+        public string Name { get; set; }
+
+        [Display(Name = "Представитель")]
+        public string Representative { get; set; }
+
+        [Display(Name = "Телефон")]
+        public string PhoneNumber { get; set; }
+
+        [Display(Name = "Адрес")]
+        public string Address { get; set; }
+        public bool Status { get; set; }
+    }
+}
+
+TurnoverNotice.cs
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace WholesaleBase.Models
+{
+    public class TurnoverNotice
+    {
+        public int Id { get; set; }
+
+        [Display(Name = "Дата")]
+        [DataType(DataType.Date)]
+        [DisplayFormat(DataFormatString = "{0:dd.MM.yy}", ApplyFormatInEditMode = true)]
+        public DateTime Date { get; set; }
+
+        [Display(Name = "Товар")]
+        public int GoodsId { get; set; }
+        public Goods Goods { get; set; }
+
+        [Display(Name = "Количество")]
+        [Range(1,Int32.MaxValue, ErrorMessage = "Количество должно быть больше 0")]
+        public int GoodsQuantity { get; set; }
+
+        [Display(Name = "Вид оборота")]
+        public int TurnoverTypeId { get; set; }
+        public TurnoverType TurnoverType { get; set; }
+
+        [Display(Name = "Участник оборота")]
+        public int TurnoverMemberId { get; set; }
+        public TurnoverMember TurnoverMember { get; set; }
+
+        [Display(Name = "Цена")]
+        public decimal Price { get; set; }
+
+        [Display(Name = "Склад")]
+        public int WarehouseId { get; set; }
+        public Warehouse Warehouse { get; set; }
+
+        [Display(Name = "Статус")]
+        public int TurnoverNoticeStatusId { get; set; }
+        public TurnoverNoticeStatus TurnoverNoticeStatus { get; set; }
+    }
+}
+
+TurnoverNoticeStatus.cs
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+
+namespace WholesaleBase.Models
+{
+    public class TurnoverNoticeStatus
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+}
+
+TurnoverType.cs
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+
+namespace WholesaleBase.Models
+{
+    public class TurnoverType
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+}
+
+Warehouse.cs
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+
+namespace WholesaleBase.Models
+{
+    public class Warehouse:TurnoverMember
+    {
+    }
+}
+
+Контроллеры:
+
+ContractsController.cs
+
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Entity;
+using System.Linq;
+using System.Net;
+using System.Web.Mvc;
+using WholesaleBase.Models;
+
+namespace WholesaleBase.Controllers
+{
+    [Authorize(Roles = "manager")]
+    public class ContractsController : Controller
+    {
+        private WholesaleContext db = new WholesaleContext();
+
+        public ActionResult Index()
+        {
+            var contracts = db.Contracts.Include(c => c.Contractor).Include(c => c.Goods).Include(c => c.Warehouse).Include(c => c.TurnoverType).Include(c => c.Goods.Supplier);
+            if (!Request.IsAjaxRequest())
+                return View(contracts.ToList());
+            else
+                return PartialView("ContractsList", contracts.ToList());
+        }
+
+        public ActionResult Create()
+        {
+            List<TurnoverType> turnoverTypes = db.TurnoverTypes.Where(tt => tt.Name == "Приход" || tt.Name == "Расход").ToList();
+            ViewBag.TurnoverTypeId = new SelectList(turnoverTypes, "Id", "Name");
+            List<Warehouse> warehouses = db.Warehouses.Where(g => g.Status == true).ToList();
+            ViewBag.WarehouseId = new SelectList(warehouses, "Id", "Name");
+            List<Goods> goods = db.Goods.Where(tm => tm.Status == true).ToList();
+            ViewBag.GoodsId = new SelectList(goods, "Id", "Name");
+            List<TurnoverMember> turnoverMembers = db.TurnoverMembers.Where(g => g.Status == true).ToList();
+            ViewBag.ContractorId = new SelectList(turnoverMembers, "Id", "Name");
+            Contract model = new Contract();
+            return View(model);
+        }
+        public ActionResult TurnoverMembersList(int id, int goodsId, int WarehouseId, int ContractorId, Contract model)
+        {
+            var turnoverTypeName = db.TurnoverTypes.Find(id).Name;           
+            switch (turnoverTypeName)
+            {
+                case "Приход":
+                    Goods goods = db.Goods.Find(goodsId);
+                    List<Supplier> suppliers = db.Suppliers.Where(g => g.Status == true).ToList();
+                    ViewBag.ContractorId = new SelectList(suppliers.Where(s => s.Id == goods.SupplierId), "Id", "Name");
+                    break;
+                case "Расход":
+                    List<Customer> customers = db.Customers.Where(g => g.Status == true).ToList();
+                    ViewBag.ContractorId = new SelectList(customers, "Id", "Name");
+                    break;
+                default: return new HttpStatusCodeResult(HttpStatusCode.BadRequest); 
+            }
+            return PartialView(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create([Bind(Include = "Id,ConclusionDate,GoodsId,GoodsQuantity,TurnoverPeriodicity,TurnoverTypeId,StartDate,ContractorId,WarehouseId")] Contract contract)
+        {
+            TurnoverType turnoverType = db.TurnoverTypes.Find(contract.TurnoverTypeId);
+            if (turnoverType.Name == "Расход")
+            {
+                var goodsMovements = db.GoodsMovements.ToList();
+                GoodsMovement goodsMovement = goodsMovements.FirstOrDefault(gm => gm.GoodsId == contract.GoodsId && gm.WarehouseId == contract.WarehouseId && gm.Date.Date == DateTime.Now.Date);
+                var turnoverNotices = db.TurnoverNotices.Include(tn => tn.TurnoverNoticeStatus).Include(tn => tn.TurnoverType).ToList();
+                int goodsQuantityInTurnoverNotices = turnoverNotices.Where(tn => tn.GoodsId == contract.GoodsId && tn.WarehouseId == contract.WarehouseId && tn.TurnoverNoticeStatus.Name == "В ожидании" && tn.TurnoverType.Name == "Расход").Select(tn => tn.GoodsQuantity).Sum();
+                var balance = goodsMovement.GoodsBalance - goodsQuantityInTurnoverNotices; 
+                if (contract.GoodsQuantity > balance)
+                {
+                    ModelState.AddModelError("GoodsQuantity", "На складе недостаточно товара, в наличии только " + balance);
+                }
+            }
+            if (ModelState.IsValid)
+            {
+                contract.Status = true;
+                db.Contracts.Add(contract);
+                db.SaveChanges();
+                if (contract.CheckToday())
+                {                    
+                    TurnoverNotice turnoverNotice = new TurnoverNotice() { Date = DateTime.Now, GoodsId = contract.GoodsId, GoodsQuantity = contract.GoodsQuantity, TurnoverMemberId = contract.ContractorId, TurnoverTypeId = contract.TurnoverTypeId, WarehouseId = contract.WarehouseId};
+                    Goods goods = db.Goods.Find(turnoverNotice.GoodsId);
+                    turnoverNotice.Price = turnoverType.Name == "Приход" ? goods.PurchasePrice : goods.SellingPrice;
+                    TurnoverNoticeStatus turnoverNoticeStatus = db.TurnoverNoticeStatus.FirstOrDefault(tns => tns.Name == "В ожидании");
+                    turnoverNotice.TurnoverNoticeStatusId = turnoverNoticeStatus.Id;
+                    db.TurnoverNotices.Add(turnoverNotice);
+                    db.SaveChanges();
+                }                
+                return RedirectToAction("Index");
+            }
+            List<TurnoverType> turnoverTypes = db.TurnoverTypes.Where(tt => tt.Name == "Приход" || tt.Name == "Расход").ToList();
+            ViewBag.TurnoverTypeId = new SelectList(turnoverTypes, "Id", "Name");
+            List<Warehouse> warehouses = db.Warehouses.Where(g => g.Status == true).ToList();
+            ViewBag.WarehouseId = new SelectList(warehouses, "Id", "Name");
+            List<Goods> goodsList = db.Goods.Where(tm => tm.Status == true).ToList();
+            ViewBag.GoodsId = new SelectList(goodsList, "Id", "Name");
+            return View(contract);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public void CreateTurnoverNotice()
+        {
+            Contract contract = TempData["contract"] as Contract;
+            if (contract.CheckToday())
+            {
+                TurnoverType turnoverType = null;
+                decimal price = 0;
+                if (contract.Contractor is Supplier)
+                {
+                    turnoverType = db.TurnoverTypes.FirstOrDefault(tt => tt.Name == "Приход");
+                    price = contract.Goods.PurchasePrice;
+                }
+                else if (contract.Contractor is Customer)
+                {
+                    turnoverType = db.TurnoverTypes.FirstOrDefault(tt => tt.Name == "Расход");
+                    price = contract.Goods.SellingPrice;
+                }
+                TurnoverNoticeStatus turnoverNoticeStatus = db.TurnoverNoticeStatus.FirstOrDefault(tns => tns.Name == "В ожидании");
+                TurnoverNotice turnoverNotice = new TurnoverNotice { Date = DateTime.Now, Goods = contract.Goods, GoodsQuantity = contract.GoodsQuantity, TurnoverType = turnoverType, Price = price, TurnoverMember = contract.Contractor, TurnoverNoticeStatus = turnoverNoticeStatus, Warehouse = contract.Warehouse };
+                TempData["turnoverNotice"] = turnoverNotice;
+                RedirectToAction("CreateForContract", "TurnoverNotice");
+            }
+        }
+
+        public ActionResult Delete(int id)
+        {
+            Contract contract = db.Contracts.Find(id);
+            contract.Status = false;
+            db.Entry(contract).State = EntityState.Modified;
+            db.SaveChanges();
+            return RedirectToAction("Index");
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
+
+
+CustomersController.cs
+
+using System.Data.Entity;
+using System.Linq;
+using System.Net;
+using System.Web.Mvc;
+using WholesaleBase.Models;
+
+namespace WholesaleBase.Controllers
+{
+    [Authorize(Roles = "manager")]
+    public class CustomersController : Controller
+    {
+        private WholesaleContext db = new WholesaleContext();
+
+        public ActionResult Index()
+        {
+            if (!Request.IsAjaxRequest())
+                return View(db.Customers.ToList());
+            else
+                return PartialView("CustomersList", db.Customers.ToList());
+        }
+
+        public ActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create([Bind(Include = "Id,Name,Representative,PhoneNumber,Address")] Customer customer)
+        {
+            if (ModelState.IsValid)
+            {
+                customer.Status = true;
+                db.Customers.Add(customer);
+                db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+
+            return View(customer);
+        }
+
+        public ActionResult Edit(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Customer customer = db.Customers.Find(id);
+            if (customer == null)
+            {
+                return HttpNotFound();
+            }
+            return View(customer);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Edit([Bind(Include = "Id,Name,Representative,PhoneNumber,Address,Status")] Customer customer)
+        {
+            if (ModelState.IsValid)
+            {
+                db.Entry(customer).State = EntityState.Modified;
+                db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            return View(customer);
+        }
+        public ActionResult RemoveOrRestore(int Id)
+        {
+            Customer customer = db.Customers.Find(Id);
+            customer.Status = !customer.Status;
+            db.SaveChanges();
+            return RedirectToAction("Index");
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
+
+
+GoodsController.cs
+
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.Owin;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Entity;
+using System.Linq;
+using System.Net;
+using System.Web;
+using System.Web.Mvc;
+using WholesaleBase.Models;
+
+namespace WholesaleBase.Controllers
+{
+    [Authorize]
+    public class GoodsController : Controller
+    {
+        WholesaleContext db = new WholesaleContext();
+        ApplicationDbContext db2 = new ApplicationDbContext();
+
+        public ActionResult Index()
+        {
+            if (User.IsInRole("storekeeper"))
+            {
+                ApplicationUserManager UserManager = HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+                ApplicationUser user = UserManager.FindByName(User.Identity.Name);
+                var WarehouseId = user.Claims.SingleOrDefault(c => c.ClaimType == "WarehouseId").ClaimValue;
+                var warehouse = db.Warehouses.Find(Int32.Parse(WarehouseId));
+                if (warehouse.Status == false) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            var goods = db.Goods.Include(g => g.MeasureUnit).Include(g => g.Supplier);
+            if (!Request.IsAjaxRequest())
+                return View(goods.ToList());
+            else
+                return PartialView("GoodsList", goods.ToList());
+        }
+        [Authorize(Roles = "storekeeper")]
+        public ActionResult Inventorization()
+        {
+            ApplicationUserManager UserManager = HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            ApplicationUser user = UserManager.FindByName(User.Identity.Name);
+            var WarehouseId = user.Claims.SingleOrDefault(c => c.ClaimType == "WarehouseId").ClaimValue;
+            var warehouse = db.Warehouses.Find(Int32.Parse(WarehouseId));
+            if (warehouse.Status == false) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
+            if (HttpContext.Session["Inv"] == null)
+            {
+                var goods = db.Goods.Where(g => g.Status == true).Include(g => g.MeasureUnit).Include(g => g.Supplier);
+                List<InventorizationViewModel> InventorizationsList = new List<InventorizationViewModel>();
+                foreach(var item in goods.ToList())
+                {
+                    var Inventorization = new InventorizationViewModel() { Id = item.Id, MeasureUnit = item.MeasureUnit, Name = item.Name, Supplier = item.Supplier };
+                    InventorizationsList.Add(Inventorization);
+                }
+                HttpContext.Session["Inv"] = InventorizationsList; 
+            }
+                return View(HttpContext.Session["Inv"]);
+                
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "storekeeper")]
+        public ActionResult InventorizationSend(InventorizationViewModel model, int goodsQuantity)
+        {
+            Goods goods = db.Goods.Find(model.Id);
+            ApplicationUserManager UserManager = HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            ApplicationUser user = UserManager.FindByName(User.Identity.Name);
+            var WarehouseId = user.Claims.SingleOrDefault(c => c.ClaimType == "WarehouseId").ClaimValue;
+            GoodsMovement goodsMovement = goods.GoodsMovements.FirstOrDefault(gm => gm.WarehouseId.ToString() == WarehouseId && gm.Date.Date == DateTime.Now.Date);
+            int goodsBalance = goodsMovement.GoodsBalance;
+            InventoryResult inventoryResult = new InventoryResult { GoodsId = model.Id, ActualGoodsBalance = goodsQuantity, RegisteredGoodsBalance = goodsBalance, InventoryDate = DateTime.Now, WarehouseId = Int32.Parse(WarehouseId)};
+            db.InventoryResults.Add(inventoryResult);
+            db.SaveChanges();
+            ((List<InventorizationViewModel>)HttpContext.Session["Inv"]).Find(x => x.Id == model.Id).Status = true;
+            model.Status = ((List<InventorizationViewModel>)HttpContext.Session["Inv"]).Find(x => x.Id == model.Id).Status;
+            return PartialView("InventorizationPartial", model);
+        }
+
+        [Authorize(Roles = "storekeeper")]
+        public ActionResult InventorizationReset()
+        {
+            HttpContext.Session["Inv"] = null;
+            return RedirectToAction("Inventorization");
+        }
+
+        [Authorize(Roles = "storekeeper")]
+        public ActionResult RemoveOrRestore(int Id)
+        {
+            Goods goods = db.Goods.Find(Id);
+            goods.Status = !goods.Status;
+            db.SaveChanges();
+
+            if(goods.Status == true)
+            {
+                GoodsMovement goodsMovement = goods.GoodsMovements.ToList().Where(gm => gm.Date.Date == DateTime.Now.Date).FirstOrDefault();
+                if(goodsMovement == null)
+                {
+                    foreach (Warehouse warehouse in db.Warehouses.Where(w => w.Status == true).ToList())
+                    {
+                        goodsMovement = new GoodsMovement { Date = DateTime.Now, GoodsId = goods.Id, GoodsArrival = 0, GoodsConsumption = 0, GoodsBalance = 0, WarehouseId = warehouse.Id };
+                        db.GoodsMovements.Add(goodsMovement);
+                    }
+                    db.SaveChanges();
+                }
+            }            
+            return RedirectToAction("Index");
+        }
+
+        [Authorize(Roles = "storekeeper")]
+        public ActionResult Create()
+        {
+            ApplicationUserManager UserManager = HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            ApplicationUser user = UserManager.FindByName(User.Identity.Name);
+            var WarehouseId = user.Claims.SingleOrDefault(c => c.ClaimType == "WarehouseId").ClaimValue;
+            var warehouse = db.Warehouses.Find(Int32.Parse(WarehouseId));
+            if (warehouse.Status == false) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            ViewBag.MeasureUnitId = new SelectList(db.MeasureUnits, "Id", "Name");
+            List<Supplier> suppliers = db.Suppliers.Where(s => s.Status == true).ToList();
+            ViewBag.SupplierId = new SelectList(suppliers, "Id", "Name");
+            return View();
+        }
+
+        [Authorize(Roles = "storekeeper")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create([Bind(Include = "Id,Name,SupplierId,MeasureUnitId,PurchasePrice,SellingPrice")] Goods goods)
+        {
+            if (ModelState.IsValid)
+            {
+                goods.Status = true;
+                db.Goods.Add(goods);
+                db.SaveChanges();
+                foreach(Warehouse warehouse in db.Warehouses.Where(w => w.Status == true).ToList())
+                {
+                    GoodsMovement goodsMovement = new GoodsMovement { Date = DateTime.Now, GoodsId = goods.Id, GoodsArrival = 0, GoodsConsumption = 0, GoodsBalance = 0, WarehouseId = warehouse.Id };
+                    db.GoodsMovements.Add(goodsMovement);                  
+                }
+                db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            ViewBag.MeasureUnitId = new SelectList(db.MeasureUnits.ToList(), "Id", "Name", goods.MeasureUnitId);
+            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(s => s.Status == true).ToList(), "Id", "Name", goods.SupplierId);
+            return View(goods);
+        }
+
+        [Authorize(Roles = "storekeeper")]
+        public ActionResult Edit(int? id)
+        {
+            ApplicationUserManager UserManager = HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            ApplicationUser user = UserManager.FindByName(User.Identity.Name);
+            var WarehouseId = user.Claims.SingleOrDefault(c => c.ClaimType == "WarehouseId").ClaimValue;
+            var warehouse = db.Warehouses.Find(Int32.Parse(WarehouseId));
+            if (warehouse.Status == false) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Goods goods = db.Goods.Find(id);
+            if (goods == null)
+            {
+                return HttpNotFound();
+            }
+            ViewBag.MeasureUnitId = new SelectList(db.MeasureUnits.ToList(), "Id", "Name", goods.MeasureUnitId);
+            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(s => s.Status == true).ToList(), "Id", "Name", goods.SupplierId);
+            return View(goods);
+        }
+
+        [Authorize(Roles = "storekeeper")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Edit([Bind(Include = "Id,Name,SupplierId,MeasureUnitId,PurchasePrice,SellingPrice,Status")] Goods goods)
+        {
+            if (ModelState.IsValid)
+            {
+                db.Entry(goods).State = EntityState.Modified;
+                db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            ViewBag.MeasureUnitId = new SelectList(db.MeasureUnits.ToList(), "Id", "Name", goods.MeasureUnitId);
+            ViewBag.SupplierId = new SelectList(db.Suppliers.Where(s => s.Status == true).ToList(), "Id", "Name", goods.SupplierId);
+            return View(goods);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+                db2.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
+
+
+GoodsMovementsController.cs
+
+using System;
+using System.Data;
+using System.Data.Entity;
+using System.Linq;
+using System.Web.Mvc;
+using WholesaleBase.Models;
+
+namespace WholesaleBase.Controllers
+{
+
+    public class GoodsMovementsController : Controller
+    {
+        private WholesaleContext db = new WholesaleContext();
+
+        [Authorize(Roles = "boss, manager")]
+        public ActionResult Index(int? SelectedWarehouseId, DateTime? MinDate, DateTime? MaxDate)
+        {
+            ViewBag.WarehousesList = db.Warehouses.Where(w => w.Status == true).ToList();
+            ViewBag.MinDate = MinDate == null ? DateTime.Now.AddDays(-30) : MinDate;
+            ViewBag.MaxDate = MaxDate == null ? DateTime.Now : MaxDate;
+            
+            ViewBag.Warehouse = SelectedWarehouseId == null ? null : db.Warehouses.Find(SelectedWarehouseId);
+
+            var goodsList = db.Goods.Include(g => g.MeasureUnit).Include(g => g.Supplier).Include(g => g.GoodsMovements).Where(g => g.Status == true).ToList();
+
+            if (!Request.IsAjaxRequest()) return View(goodsList);
+            else return PartialView("GoodsMovementsList", goodsList);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
+
+
+HomeController.cs
+
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.Owin;
+using System;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+using WholesaleBase.Models;
+
+namespace WholesaleBase.Controllers
+{
+    public class HomeController : Controller
+    {
+        WholesaleContext db = new WholesaleContext();
+        [Authorize]
+        public ActionResult Index()
+        {
+            if (User.IsInRole("storekeeper"))
+            {
+                ApplicationUserManager UserManager = HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+                ApplicationUser user = UserManager.FindByName(User.Identity.Name);
+                var WarehouseId = user.Claims.SingleOrDefault(c => c.ClaimType == "WarehouseId").ClaimValue;
+                var warehouse = db.Warehouses.Find(Int32.Parse(WarehouseId));
+                ViewBag.Warehouse = warehouse;
+            }            
+            return View();
+        }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
+
+InventoryResultsController.cs
+
+using System;
+using System.Data;
+using System.Data.Entity;
+using System.Linq;
+using System.Web.Mvc;
+using WholesaleBase.Models;
+
+namespace WholesaleBase.Controllers
+{
+    public class InventoryResultsController : Controller
+    {
+        private WholesaleContext db = new WholesaleContext();
+        [Authorize(Roles = "boss")]
+        public ActionResult Index(int? SelectedWarehouseId, DateTime? MinDate, DateTime? MaxDate)
+        {
+            ViewBag.WarehousesList = db.Warehouses.Where(w => w.Status == true).ToList();
+            ViewBag.Warehouse = SelectedWarehouseId == null ? null : db.Warehouses.Find(SelectedWarehouseId);
+            ViewBag.MinDate = MinDate == null ? DateTime.Now.AddDays(-30) : MinDate;
+            ViewBag.MaxDate = MaxDate == null ? DateTime.Now : MaxDate;
+            var inventoryResults = db.InventoryResults.Include(i => i.Goods).Include(i => i.Warehouse).Include(i => i.Goods.MeasureUnit).Include(i => i.Goods.Supplier);
+            if (!Request.IsAjaxRequest()) return View(inventoryResults.ToList());
+            else return PartialView("InventoryResultsList", inventoryResults.ToList());
+        }
+
+        public PartialViewResult InventoryResultStatus(InventoryResult item)
+        {
+            return PartialView(item);
+        }
+
+        public ActionResult Confirm(int Id)
+        {
+            InventoryResult inventoryResult = db.InventoryResults.Find(Id);
+            inventoryResult.Status = true;
+            db.SaveChanges();
+            var goodsMovements = db.GoodsMovements.ToList();
+            GoodsMovement goodsMovement = goodsMovements.FirstOrDefault(gm => gm.Date.Date == DateTime.Now.Date && gm.GoodsId == inventoryResult.GoodsId && gm.WarehouseId == inventoryResult.WarehouseId);
+            goodsMovement.GoodsBalance += inventoryResult.ActualGoodsBalance - inventoryResult.RegisteredGoodsBalance;
+            db.Entry(goodsMovement).State = EntityState.Modified;
+            db.SaveChanges();
+
+            return RedirectToAction("InventoryResultStatus", inventoryResult);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
+
+
+SuppliersController.cs
+
+using System.Data.Entity;
+using System.Linq;
+using System.Net;
+using System.Web.Mvc;
+using WholesaleBase.Models;
+
+namespace WholesaleBase.Controllers
+{
+    [Authorize(Roles = "manager")]
+    public class SuppliersController : Controller
+    {
+        private WholesaleContext db = new WholesaleContext();
+
+        public ActionResult Index()
+        {
+            if (!Request.IsAjaxRequest())
+                return View(db.Suppliers.ToList());
+            else
+                return PartialView("SuppliersList", db.Suppliers.ToList());
+        }
+
+        public ActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create([Bind(Include = "Id,Name,Representative,PhoneNumber,Address")] Supplier supplier)
+        {
+            if (ModelState.IsValid)
+            {
+                supplier.Status = true;
+                db.Suppliers.Add(supplier);
+                db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+
+            return View(supplier);
+        }
+
+        public ActionResult Edit(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Supplier supplier = db.Suppliers.Find(id);
+            if (supplier == null)
+            {
+                return HttpNotFound();
+            }
+            return View(supplier);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Edit([Bind(Include = "Id,Name,Representative,PhoneNumber,Address,Status")] Supplier supplier)
+        {
+            if (ModelState.IsValid)
+            {
+                db.Entry(supplier).State = EntityState.Modified;
+                db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            return View(supplier);
+        }
+        public ActionResult RemoveOrRestore(int Id)
+        {
+            Supplier supplier = db.Suppliers.Find(Id);
+            supplier.Status = !supplier.Status;
+            db.SaveChanges();
+            return RedirectToAction("Index");
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
+
+
+TurnoverNoticesController.cs
+
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.Owin;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Entity;
+using System.Linq;
+using System.Net;
+using System.Web;
+using System.Web.Mvc;
+using WholesaleBase.Models;
+
+namespace WholesaleBase.Controllers
+{
+    [Authorize]
+    public class TurnoverNoticesController : Controller
+    {
+        private WholesaleContext db = new WholesaleContext();
+
+        public ActionResult Index(int? SelectedWarehouseId, int? SelectedTurnoverTypeId, DateTime? MinDate, DateTime? MaxDate)
+        {
+            var turnoverNotices = db.TurnoverNotices.Include(t => t.Goods).Include(t => t.TurnoverMember).Include(t => t.TurnoverNoticeStatus).Include(t => t.Goods.MeasureUnit).Include(t => t.Goods.Supplier).Include(t => t.Warehouse).Include(t => t.TurnoverType);
+            ViewBag.TurnoverTypesList = db.TurnoverTypes.Where(tt => tt.Name != "Внутреннее перемещение").ToList();
+            ViewBag.TurnoverType = SelectedTurnoverTypeId == null ? null : db.TurnoverTypes.Find(SelectedTurnoverTypeId);
+            if (User.IsInRole("storekeeper"))
+            {
+                ApplicationUserManager UserManager = HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+                ApplicationUser user = UserManager.FindByName(User.Identity.Name);
+                var WarehouseId = user.Claims.SingleOrDefault(c => c.ClaimType == "WarehouseId").ClaimValue;
+                ViewBag.Warehouse = db.Warehouses.Find(Int32.Parse(WarehouseId));
+                if (ViewBag.Warehouse.Status == false) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                ViewBag.MinDate = DateTime.Now;
+                ViewBag.MaxDate = DateTime.Now;
+            }
+            else
+            {
+                ViewBag.WarehousesList = db.Warehouses.Where(w => w.Status == true).ToList();
+                ViewBag.Warehouse = SelectedWarehouseId == null ? db.Warehouses.First(w => w.Status == true) : db.Warehouses.Find(SelectedWarehouseId);
+                ViewBag.MinDate = MinDate == null ? DateTime.Now : MinDate;
+                ViewBag.MaxDate = MaxDate == null ? DateTime.Now : MaxDate;
+            }
+                
+            if (!Request.IsAjaxRequest()) return View(turnoverNotices.ToList());
+            else return PartialView("TurnoverNoticesList", turnoverNotices.ToList());
+        }
+        [Authorize(Roles = "manager")]
+        public ActionResult Create()
+        {
+            List<Goods> goods = db.Goods.Where(g => g.Status == true).ToList();
+            ViewBag.GoodsId = new SelectList(goods, "Id", "Name");
+            List<Supplier> suppliers = db.Suppliers.Where(g => g.Status == true).ToList();
+            ViewBag.TurnoverMemberId = new SelectList(suppliers, "Id", "Name");
+            ViewBag.TurnoverTypeId = new SelectList(db.TurnoverTypes.ToList(), "Id", "Name");
+            List<Warehouse> warehouses = db.Warehouses.Where(g => g.Status == true).ToList();
+            ViewBag.WarehouseId = new SelectList(warehouses, "Id", "Name");
+            TurnoverNotice model = new TurnoverNotice();
+            return View(model);
+        }
+        
+        public ActionResult TurnoverMembersList(int id, int goodsId, int WarehouseId, int TurnoverMemberId, TurnoverNotice model)
+        {
+            var turnoverTypeName = db.TurnoverTypes.Find(id).Name;
+            List<Warehouse> warehouses = db.Warehouses.Where(g => g.Status == true).ToList();
+            ViewBag.WarehouseId = new SelectList(warehouses, "Id", "Name");
+            switch (turnoverTypeName)
+            {
+                case "Приход":
+                    Goods goods = db.Goods.Find(goodsId);
+                    List<Supplier> suppliers = db.Suppliers.Where(g => g.Status == true).ToList();
+                    ViewBag.TurnoverMemberId = new SelectList(suppliers.Where(s => s.Id == goods.SupplierId), "Id", "Name");                    
+                    return PartialView(model);
+                case "Расход":
+                    List<Customer> customers = db.Customers.Where(g => g.Status == true).ToList();
+                    ViewBag.TurnoverMemberId = new SelectList(customers, "Id", "Name");
+                    return PartialView(model);
+                case "Внутреннее перемещение":
+                    ViewBag.TurnoverMemberId = new SelectList(warehouses, "Id", "Name");
+                    return PartialView("WarehousesList",model);
+                default: return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+        }
+        public ActionResult Warehouse(int id, TurnoverNotice model)
+        {
+            ViewBag.WarehouseId = new SelectList(db.Warehouses.Where(w => w.Id != id).ToList(), "Id", "Name");
+            return PartialView(model);
+        }
+        [Authorize(Roles = "manager")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create([Bind(Include = "Date,GoodsId,GoodsQuantity,TurnoverTypeId,TurnoverMemberId,WarehouseId")] TurnoverNotice turnoverNotice)
+        {
+            TurnoverType turnoverType = db.TurnoverTypes.Find(turnoverNotice.TurnoverTypeId);
+            if (turnoverType.Name == "Расход")
+            {
+                var goodsMovements = db.GoodsMovements.ToList();
+                GoodsMovement goodsMovement = goodsMovements.FirstOrDefault(gm => gm.GoodsId == turnoverNotice.GoodsId && gm.WarehouseId == turnoverNotice.WarehouseId && gm.Date.Date == DateTime.Now.Date);
+                if (turnoverNotice.GoodsQuantity > goodsMovement.GoodsBalance)
+                {
+                    ModelState.AddModelError("GoodsQuantity", "На складе недостаточно товара, в наличии только " + goodsMovement.GoodsBalance);
+                }
+            }
+            
+            if (ModelState.IsValid)
+            {
+                TurnoverNoticeStatus turnoverNoticeStatus = db.TurnoverNoticeStatus.FirstOrDefault(tns => tns.Name == "В ожидании");
+                turnoverNotice.TurnoverNoticeStatusId = turnoverNoticeStatus.Id;
+                if (turnoverType.Name == "Внутреннее перемещение")
+                {
+                    TurnoverType turnoverType1 = db.TurnoverTypes.FirstOrDefault(tt => tt.Name == "Приход");
+                    turnoverNotice.TurnoverTypeId = turnoverType1.Id;
+                    turnoverNotice.Price = 0;
+                    TurnoverType turnoverType2 = db.TurnoverTypes.FirstOrDefault(tt => tt.Name == "Расход");
+                    TurnoverNotice turnoverNotice2 = new TurnoverNotice() { Date = turnoverNotice.Date, TurnoverTypeId = turnoverType2.Id, GoodsId = turnoverNotice.GoodsId, GoodsQuantity = turnoverNotice.GoodsQuantity, Price = 0, TurnoverMemberId = turnoverNotice.WarehouseId, WarehouseId = turnoverNotice.TurnoverMemberId, TurnoverNoticeStatusId = turnoverNotice.TurnoverNoticeStatusId };
+                    db.TurnoverNotices.Add(turnoverNotice);
+                    db.TurnoverNotices.Add(turnoverNotice2);
+                    db.SaveChanges();
+                }
+                else
+                {
+                    Goods goods = db.Goods.Find(turnoverNotice.GoodsId);
+                    turnoverNotice.Price = turnoverType.Name == "Приход" ? goods.PurchasePrice : goods.SellingPrice;
+                    db.TurnoverNotices.Add(turnoverNotice);
+                    db.SaveChanges();
+                }
+                return RedirectToAction("Index");
+                              
+            }
+            List<Goods> goodsList = db.Goods.Where(g => g.Status == true).ToList();
+            ViewBag.GoodsId = new SelectList(goodsList, "Id", "Name");
+            List<Supplier> suppliers = db.Suppliers.Where(g => g.Status == true).ToList();
+            ViewBag.TurnoverMemberId = new SelectList(suppliers, "Id", "Name");
+            ViewBag.TurnoverTypeId = new SelectList(db.TurnoverTypes.ToList(), "Id", "Name", 1);
+            List<Warehouse> warehouses = db.Warehouses.Where(g => g.Status == true).ToList();
+            ViewBag.WarehouseId = new SelectList(warehouses, "Id", "Name");
+            return View(turnoverNotice);
+        }
+        public PartialViewResult TurnoverNoticeStatus(TurnoverNotice item) 
+        {
+            item.TurnoverNoticeStatus = db.TurnoverNoticeStatus.Find(item.TurnoverNoticeStatusId);
+            return PartialView(item);
+        }
+
+        public ActionResult Confirm(int Id)
+        {
+            TurnoverNotice turnoverNotice = db.TurnoverNotices.Find(Id);
+            TurnoverNoticeStatus turnoverNoticeStatus = db.TurnoverNoticeStatus.FirstOrDefault(tns => tns.Name == "Подтверждено");
+            turnoverNotice.TurnoverNoticeStatus = turnoverNoticeStatus;
+            db.SaveChanges();
+
+            List<GoodsMovement> goodsMovements = db.GoodsMovements.ToList();
+            GoodsMovement goodsMovement = goodsMovements.FirstOrDefault(gm => gm.GoodsId == turnoverNotice.GoodsId && gm.WarehouseId == turnoverNotice.WarehouseId && gm.Date.Date == turnoverNotice.Date.Date);
+            TurnoverType turnoverType = db.TurnoverTypes.Find(turnoverNotice.TurnoverTypeId);
+            goodsMovement.AddTurnover(turnoverType, turnoverNotice.GoodsQuantity);
+            db.Entry(goodsMovement).State = EntityState.Modified;
+            db.SaveChanges();
+            return RedirectToAction("TurnoverNoticeStatus", turnoverNotice);
+        }
+
+        public ActionResult Cancel(int Id)
+        {
+            TurnoverNotice turnoverNotice = db.TurnoverNotices.Find(Id);
+            TurnoverNoticeStatus turnoverNoticeStatus = db.TurnoverNoticeStatus.FirstOrDefault(tns => tns.Name == "Отменено");
+            turnoverNotice.TurnoverNoticeStatus = turnoverNoticeStatus;
+            db.SaveChanges();
+            return RedirectToAction("TurnoverNoticeStatus", turnoverNotice);
+        }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
+
+
+WarehousesController.cs
+
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.Entity;
+using System.Linq;
+using System.Net;
+using System.Web.Mvc;
+using WholesaleBase.Models;
+
+namespace WholesaleBase.Controllers
+{
+    [Authorize(Roles ="boss")]
+    public class WarehousesController : Controller
+    {
+        private WholesaleContext db = new WholesaleContext();
+        private ApplicationDbContext db2 = new ApplicationDbContext();
+
+        public ActionResult Index()
+        {
+            List<WarehouseAccountView> warehouseAccountlist = new List<WarehouseAccountView>();
+            foreach (Warehouse i in db.Warehouses)
+            {
+                WarehouseAccountView warehouseAccountView = new WarehouseAccountView{Warehouse = i};
+                warehouseAccountView.Account = db2.Users.FirstOrDefault(u => u.Claims.FirstOrDefault(c => c.ClaimType == "WarehouseId").ClaimValue == i.Id.ToString());
+                warehouseAccountlist.Add(warehouseAccountView);
+            }
+            if (!Request.IsAjaxRequest())
+                return View(warehouseAccountlist);
+            else
+                return PartialView("WarehouseAccountList", warehouseAccountlist);                
+        }
+
+        public ActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create([Bind(Include = "Id,Name,Representative,PhoneNumber,Address")] Warehouse warehouse)
+        {
+            if (ModelState.IsValid)
+            {
+                warehouse.Status = true;
+                db.Warehouses.Add(warehouse);
+                db.SaveChanges();
+
+                foreach(var goods in db.Goods.ToList())
+                {
+                    db.GoodsMovements.Add(new GoodsMovement() { Date = DateTime.Now, GoodsId = goods.Id, WarehouseId = warehouse.Id, GoodsArrival = 0, GoodsConsumption = 0, GoodsBalance = 0});
+                }
+                db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+
+            return View(warehouse);
+        }
+
+        public ActionResult Edit(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Warehouse warehouse = db.Warehouses.Find(id);
+            if (warehouse == null)
+            {
+                return HttpNotFound();
+            }
+            return View(warehouse);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Edit([Bind(Include = "Id,Name,Representative,PhoneNumber,Address,Status")] Warehouse warehouse)
+        {
+            if (ModelState.IsValid)
+            {
+                db.Entry(warehouse).State = EntityState.Modified;
+                db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            return View(warehouse);
+        }
+
+        public ActionResult RemoveOrRestore(int Id)
+        {
+            Warehouse warehouse = db.Warehouses.Find(Id);
+            warehouse.Status = !warehouse.Status;
+            db.SaveChanges();
+            if (warehouse.Status == true)
+            {
+                var goodsMovement = db.GoodsMovements.ToList().Where(gm => gm.Date.Date == DateTime.Now.Date && gm.WarehouseId == warehouse.Id).FirstOrDefault();
+                if (goodsMovement == null)
+                {
+                    foreach (Goods goods in db.Goods.Where(w => w.Status == true).ToList())
+                    {
+                        goodsMovement = new GoodsMovement { Date = DateTime.Now, GoodsId = goods.Id, GoodsArrival = 0, GoodsConsumption = 0, GoodsBalance = 0, WarehouseId = warehouse.Id };
+                        db.GoodsMovements.Add(goodsMovement);
+                    }
+                    db.SaveChanges();
+                }
+            }
+            return RedirectToAction("Index");
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+                db2.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
