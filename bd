@@ -1,0 +1,96 @@
+CREATE TABLE [dbo].[TurnoverNoticeStatus] (
+    [Id]   INT            IDENTITY (1, 1) NOT NULL,
+    [Name] NVARCHAR (MAX) NULL,
+    CONSTRAINT [PK_dbo.TurnoverNoticeStatus] PRIMARY KEY CLUSTERED ([Id] ASC)
+);
+CREATE TABLE [dbo].[TurnoverTypes] (
+    [Id]   INT            IDENTITY (1, 1) NOT NULL,
+    [Name] NVARCHAR (MAX) NULL,
+    CONSTRAINT [PK_dbo.TurnoverTypes] PRIMARY KEY CLUSTERED ([Id] ASC)
+);
+CREATE TABLE [dbo].[TurnoverMembers] (
+    [Id]             INT            IDENTITY (1, 1) NOT NULL,
+    [Name]           NVARCHAR (MAX) NOT NULL,
+    [Representative] NVARCHAR (MAX) NULL,
+    [PhoneNumber]    NVARCHAR (MAX) NULL,
+    [Address]        NVARCHAR (MAX) NULL,
+    [Status]         BIT            NOT NULL,
+    [Discriminator]  NVARCHAR (128) NOT NULL,
+    CONSTRAINT [PK_dbo.TurnoverMembers] PRIMARY KEY CLUSTERED ([Id] ASC)
+);
+CREATE TABLE [dbo].[MeasureUnits] (
+    [Id]   INT            IDENTITY (1, 1) NOT NULL,
+    [Name] NVARCHAR (MAX) NULL,
+    CONSTRAINT [PK_dbo.MeasureUnits] PRIMARY KEY CLUSTERED ([Id] ASC)
+);
+CREATE TABLE [dbo].[Goods] (
+    [Id]            INT             IDENTITY (1, 1) NOT NULL,
+    [Name]          NVARCHAR (MAX)  NOT NULL,
+    [SupplierId]    INT             NOT NULL,
+    [MeasureUnitId] INT             NOT NULL,
+    [PurchasePrice] DECIMAL (18, 2) NOT NULL,
+    [SellingPrice]  DECIMAL (18, 2) NOT NULL,
+    [Status]        BIT             NOT NULL,
+    CONSTRAINT [PK_dbo.Goods] PRIMARY KEY CLUSTERED ([Id] ASC),
+    CONSTRAINT [FK_dbo.Goods_dbo.MeasureUnits_MeasureUnitId] FOREIGN KEY ([MeasureUnitId]) REFERENCES [dbo].[MeasureUnits] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_dbo.Goods_dbo.TurnoverMembers_SupplierId] FOREIGN KEY ([SupplierId]) REFERENCES [dbo].[TurnoverMembers] ([Id]) ON DELETE CASCADE
+);
+CREATE TABLE [dbo].[Contracts] (
+    [Id]                  INT      IDENTITY (1, 1) NOT NULL,
+    [ConclusionDate]      DATETIME NOT NULL,
+    [GoodsId]             INT      NOT NULL,
+    [GoodsQuantity]       INT      NOT NULL,
+    [TurnoverPeriodicity] INT      NOT NULL,
+    [StartDate]           DATETIME NOT NULL,
+    [ContractorId]        INT      NOT NULL,
+    [WarehouseId]         INT      NOT NULL,
+    [Status]              BIT      NOT NULL,
+    [TurnoverTypeId]      INT      DEFAULT ((0)) NOT NULL,
+    CONSTRAINT [PK_dbo.Contracts] PRIMARY KEY CLUSTERED ([Id] ASC),
+    CONSTRAINT [FK_dbo.Contracts_dbo.TurnoverMembers_ContractorId] FOREIGN KEY ([ContractorId]) REFERENCES [dbo].[TurnoverMembers] ([Id]),
+    CONSTRAINT [FK_dbo.Contracts_dbo.Goods_GoodsId] FOREIGN KEY ([GoodsId]) REFERENCES [dbo].[Goods] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_dbo.Contracts_dbo.TurnoverMembers_WarehouseId] FOREIGN KEY ([WarehouseId]) REFERENCES [dbo].[TurnoverMembers] ([Id]),
+    CONSTRAINT [FK_dbo.Contracts_dbo.TurnoverTypes_TurnoverTypeId] FOREIGN KEY ([TurnoverTypeId]) REFERENCES [dbo].[TurnoverTypes] ([Id]) ON DELETE CASCADE
+);
+
+CREATE TABLE [dbo].[GoodsMovements] (
+    [Id]               INT      IDENTITY (1, 1) NOT NULL,
+    [GoodsId]          INT      NOT NULL,
+    [WarehouseId]      INT      NOT NULL,
+    [Date]             DATETIME NOT NULL,
+    [GoodsArrival]     INT      NOT NULL,
+    [GoodsConsumption] INT      NOT NULL,
+    [GoodsBalance]     INT      NOT NULL,
+    CONSTRAINT [PK_dbo.GoodsMovements] PRIMARY KEY CLUSTERED ([Id] ASC),
+    CONSTRAINT [FK_dbo.GoodsMovements_dbo.Goods_GoodsId] FOREIGN KEY ([GoodsId]) REFERENCES [dbo].[Goods] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_dbo.GoodsMovements_dbo.TurnoverMembers_WarehouseId] FOREIGN KEY ([WarehouseId]) REFERENCES [dbo].[TurnoverMembers] ([Id])
+);
+CREATE TABLE [dbo].[InventoryResults] (
+    [Id]                     INT      IDENTITY (1, 1) NOT NULL,
+    [InventoryDate]          DATETIME NOT NULL,
+    [WarehouseId]            INT      NOT NULL,
+    [GoodsId]                INT      NOT NULL,
+    [ActualGoodsBalance]     INT      NOT NULL,
+    [RegisteredGoodsBalance] INT      NOT NULL,
+    [Status]                 BIT      NOT NULL,
+    CONSTRAINT [PK_dbo.InventoryResults] PRIMARY KEY CLUSTERED ([Id] ASC),
+    CONSTRAINT [FK_dbo.InventoryResults_dbo.Goods_GoodsId] FOREIGN KEY ([GoodsId]) REFERENCES [dbo].[Goods] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_dbo.InventoryResults_dbo.TurnoverMembers_WarehouseId] FOREIGN KEY ([WarehouseId]) REFERENCES [dbo].[TurnoverMembers] ([Id])
+);
+CREATE TABLE [dbo].[TurnoverNotices] (
+    [Id]                     INT             IDENTITY (1, 1) NOT NULL,
+    [Date]                   DATETIME        NOT NULL,
+    [GoodsId]                INT             NOT NULL,
+    [GoodsQuantity]          INT             NOT NULL,
+    [TurnoverTypeId]         INT             NOT NULL,
+    [TurnoverMemberId]       INT             NOT NULL,
+    [Price]                  DECIMAL (18, 2) NOT NULL,
+    [WarehouseId]            INT             NOT NULL,
+    [TurnoverNoticeStatusId] INT             NOT NULL,
+    CONSTRAINT [PK_dbo.TurnoverNotices] PRIMARY KEY CLUSTERED ([Id] ASC),
+    CONSTRAINT [FK_dbo.TurnoverNotices_dbo.Goods_GoodsId] FOREIGN KEY ([GoodsId]) REFERENCES [dbo].[Goods] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_dbo.TurnoverNotices_dbo.TurnoverMembers_TurnoverMemberId] FOREIGN KEY ([TurnoverMemberId]) REFERENCES [dbo].[TurnoverMembers] ([Id]),
+    CONSTRAINT [FK_dbo.TurnoverNotices_dbo.TurnoverNoticeStatus_TurnoverNoticeStatusId] FOREIGN KEY ([TurnoverNoticeStatusId]) REFERENCES [dbo].[TurnoverNoticeStatus] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_dbo.TurnoverNotices_dbo.TurnoverTypes_TurnoverTypeId] FOREIGN KEY ([TurnoverTypeId]) REFERENCES [dbo].[TurnoverTypes] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_dbo.TurnoverNotices_dbo.TurnoverMembers_WarehouseId] FOREIGN KEY ([WarehouseId]) REFERENCES [dbo].[TurnoverMembers] ([Id])
+);
